@@ -1,145 +1,126 @@
-Combined Project: Comprehensive Deployment and Management Environment
-Overview
-This project combines essential skills in setting up deployment environments, managing version control, Linux system administration, and creating automated deployment pipelines. You will learn to use tools and platforms like Visual Studio Code, GitHub, Azure, Linux, Apache Web Server, and Jenkins to create a robust and efficient development and deployment workflow.
+Automated Deployment with Jenkins and Docker
 
-Tasks
-1. Setting Up a Deployment Environment in Azure
-Objective: Set up a deployment environment on Azure by installing Visual Studio Code, creating a GitHub repository, registering for an Azure account, and configuring a Linux Virtual Machine (VM).
+ Pre-requisites
+1. Jenkins: Ensure Jenkins is installed and running.
+2. Docker: Ensure Docker is installed on the Jenkins server.
+3. Docker Pipeline Plugin: Install the Docker Pipeline plugin in Jenkins.
 
-Steps:
+ Steps
+1. Create and Push Dockerfile
+Ensure the `Dockerfile` with the following content is created and pushed to your repository:
 
-Install Visual Studio Code (VS Code):
+   Dockerfile
+Use the official Apache image from the Docker Hub
 
-Download and install Visual Studio Code on your local machine.
-Configure VS Code with preferred settings and extensions for deployment.
-Create a GitHub Account and Repository:
+    FROM httpd:alpine
 
-Sign up for a GitHub account if you haven't already.
-Create a new repository on GitHub with a README file.
-Clone this repository to your local machine using Git.
-Register for an Azure Account:
+     #Copy the content of the project1 folder to the Apache web directory
+    COPY . /usr/local/apache2/htdocs/
 
-Visit the Azure website and sign up for an Azure account.
-Follow the sign-up process to create and activate your Azure account.
-Configure a Linux VM in Azure:
+     #Set the ServerName directive globally to suppress the warning
+    RUN echo "ServerName localhost" >> /usr/local/apache2/conf/httpd.conf
 
-Log in to the Azure portal and create a new Linux VM instance.
-Choose your preferred Linux distribution (e.g., Ubuntu).
-Configure VM settings such as size, region, and authentication (SSH keys or password).
-Connect to the VM using SSH to verify access and functionality.
-Install Git on the Linux VM:
+     Expose port 80
+    EXPOSE 80
+   
+    In Bash
+    git add Dockerfile
+    git commit -m "Add Dockerfile with ServerName directive"
+    git push
+   
 
-Access the Linux VM via SSH.
-Update the package index and install Git using the package manager:
-bash
-Copy code
-sudo apt update
-sudo apt install git
-Verify the installation by checking the Git version:
-bash
-Copy code
-git --version
-2. Managing Your Deployment Environment with Git and Linux
-Objective: Combine essential Git and Linux skills to set up and manage a robust deployment environment.
+2. Jenkins Pipeline Configuration
+Create a Jenkins pipeline job with the following `Jenkinsfile`:
 
-Tasks:
+   In groovy script
+    pipeline {
+        agent any
 
-Fork a Repository:
+        environment {
+            DOCKER_IMAGE = "project1-apache"
+            CONTAINER_NAME = "project1-container"
+            HOST_PORT = "8000"
+        }
 
-Visit GitHub and navigate to a repository you wish to fork.
-Click the "Fork" button to create your own copy under your GitHub account.
-Set Up SSH Keys:
+        stages {
+            stage('Clone Repository') {
+                steps {
+                    git 'https://github.com/mosesthummathati/project1.git'
+                }
+            }
+            stage('Build Docker Image') {
+                steps {
+                    script {
+                        sh 'docker build -t ${DOCKER_IMAGE} .'
+                    }
+                }
+            }
+            stage('Run Docker Container') {
+                steps {
+                    script {
+                        sh '''
+                        if [ $(docker ps -a -q -f name=${CONTAINER_NAME}) ]; then
+                            docker rm -f ${CONTAINER_NAME}
+                        fi
+                        docker run -d -p ${HOST_PORT}:80 --name ${CONTAINER_NAME} ${DOCKER_IMAGE}
+                        '''
+                    }
+                }
+            }
+            stage('Test Application') {
+                steps {
+                    script {
+                        sh '''
+                        curl -f http://localhost:${HOST_PORT} || exit 1
+                        '''
+                    }
+                }
+            }
+        }
 
-Generate SSH keys on your local machine using ssh-keygen.
-Add your SSH key to the SSH agent with ssh-add.
-Copy the SSH key to your clipboard and add it to your GitHub account under Settings > SSH and GPG keys.
-Clone a Repository:
+        post {
+            always {
+                script {
+                    echo 'Cleaning up...'
+                    // Optional: Clean up Docker images and containers if needed
+                }
+            }
+        }
+    }
+   
 
-Clone a repository from your GitHub account using git clone <repository-url>.
-Make changes locally, commit them using git commit, and push them back to the remote repository with git push.
-Create and Manage Branches:
+3. Create Jenkins Job
 
-Create a new branch using git branch <branch-name>.
-Switch between branches with git checkout <branch-name>.
-Merge branches with git merge <branch-name> to integrate changes.
-Directory Management with Linux Commands:
+Open Jenkins and create a new pipeline job.
+In the pipeline configuration, set the pipeline script to the above `Jenkinsfile` content.
 
-Master essential Linux commands such as ls (list directory contents), cd (change directory), mkdir (create new directories), and rm (remove files or directories).
-3. Linux System Administration
-Objective: Gain practical experience in essential Linux system administration tasks, including file and process management, user account administration, and network configuration.
+4. Run the Jenkins Pipeline Job
+Trigger the job manually or set up a webhook to trigger the job on code changes.
+Monitor the job execution to ensure all steps complete successfully.
 
-Tasks:
+5. Verify Deployment
+Open a web browser and navigate to `http://localhost:8000` (or `http://<your-public-ip>:8000` if deploying on a remote server) to verify the application is running.
 
-Explore the Linux Root Directory:
+ Troubleshooting
 
-Navigate through the root directory (/) and explore its subdirectories (/bin, /etc, /var, etc.) to examine their roles in the file system hierarchy.
-File and Process Management:
+Jenkins Console Output: Check the console output of the Jenkins job for any errors.
+Docker Container Logs: If there are issues, check the container logs using:
 
-Use commands like ps (process status), top (dynamic real-time view of system processes), kill (terminate processes), and nice (adjust process priority) to manage and monitor system processes.
-Change File Permissions:
+  In Bash
+  docker logs project1-container
+ 
+Firewall and Network Settings: Ensure that the firewall allows traffic on port 8000 and that network settings are correctly configured.
 
-Use the chmod command to manage file permissions, practicing both symbolic and numeric modes to set permissions for files and directories.
-User Account Creation and Deletion:
+ Cleanup
 
-Use commands such as useradd (add a new user), userdel (delete a user), and passwd (manage user passwords) to create and manage user accounts.
-Configure Network Interfaces:
+Stop and Remove Docker Container: If needed, stop and remove the Docker container:
 
-Configure IP addresses, set up DNS servers, manage network interfaces (using ifconfig or ip commands), and ensure firewall settings (using iptables) are correctly configured for network security.
-4. Automated Deployment Pipeline
-Objective: Set up an automated deployment pipeline using Apache Web Server, Jenkins, and GitHub.
+  In Bash
+  docker stop project1-container
+  docker rm project1-container
+ 
 
-Tasks:
+Remove Docker Image: If needed, remove the Docker image:
 
-Apache Web Server Installation and Configuration:
-
-Install Apache Web Server on your VM:
-bash
-Copy code
-sudo apt update
-sudo apt install apache2
-Start and enable Apache to run on boot:
-bash
-Copy code
-sudo systemctl start apache2
-sudo systemctl enable apache2
-Verify Apache is running by accessing the server's IP address in a web browser.
-Jenkins Installation and Configuration:
-
-Install Jenkins on your VM:
-bash
-Copy code
-sudo apt update
-sudo apt install openjdk-11-jdk
-wget -q -O - https://pkg.jenkins.io/debian/jenkins.io.key | sudo apt-key add -
-sudo sh -c 'echo deb http://pkg.jenkins.io/debian-stable binary/ > /etc/apt/sources.list.d/jenkins.list'
-sudo apt update
-sudo apt install jenkins
-Start Jenkins and enable it to run on boot:
-bash
-Copy code
-sudo systemctl start jenkins
-sudo systemctl enable jenkins
-Access Jenkins via http://<your_server_ip>:8080 and complete the setup wizard.
-Setting Up Webhooks:
-
-Go to your GitHub repository settings and navigate to "Webhooks."
-Add a new webhook with the URL: http://<your_jenkins_server_ip>:8080/github-webhook/
-Choose the events you want to trigger the webhook, typically "Push events."
-Configuring Jenkins Jobs:
-
-Create a new Jenkins job:
-Go to the Jenkins dashboard and click on "New Item."
-Choose "Freestyle project" and name it appropriately.
-Configure the job to pull code from your GitHub repository:
-Under "Source Code Management," select "Git" and enter your repository URL.
-Set up build triggers:
-Under "Build Triggers," select "GitHub hook trigger for GITScm polling."
-Define build steps to compile, test, and package your application.
-Configuring Deployment Settings:
-
-Add a post-build action to deploy the application to the Apache web server:
-Under "Post-build Actions," choose "Send files or execute commands over SSH."
-Configure the SSH settings to deploy your application files to the Apache web directory.
-Ensure proper file permissions and configurations are set for the deployment.
-Conclusion
-By completing this combined project, you will have established a comprehensive deployment and management environment. You will gain practical experience in using industry-standard tools and practices, enhancing your skills in cloud computing, version control, system administration, and automated deployment processes.
+  In Bash
+  docker rmi project1-apache

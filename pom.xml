@@ -1,0 +1,40 @@
+	<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    
+    <groupId>com.example</groupId> <!-- Replace with your desired group ID -->
+    <artifactId>maven.example</artifactId> <!-- Replace with your desired artifact ID -->
+    <version>1.0-SNAPSHOT</version> <!-- Replace with your desired version -->
+    <packaging>war</packaging>
+    
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo.maven.apache.org/maven2</url>
+        </repository>
+    </repositories>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.3.1</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.tomcat.maven</groupId>
+                <artifactId>tomcat7-maven-plugin</artifactId>
+                <version>2.2</version> <!-- Ensure this version is available -->
+                <configuration>
+                    <url>http://20.235.157.24/:8081/manager/html</url>
+                    <server>TomcatServer</server>
+                    <username>admin</username>
+                    <password>admin</password>
+                    <path>http://20.235.157.24:8081/simplemaven/</path> <!-- This should be the context path -->
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+
